@@ -183,7 +183,7 @@ class MWS(object):
                 self.logger.warning('%s - connection error' % method_name)
                 pass  # retry immediately
             except MWSError as e:
-                if str(e) == '503 Server Error: Service Unavailable':
+                if str(e).find('Service Unavailable') > -1:
                     tries += 1
                     seconds = tries
                     self.logger.info("Backing off %s: %.1fs" %
