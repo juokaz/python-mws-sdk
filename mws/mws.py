@@ -19,8 +19,12 @@ from time import strftime, gmtime
 
 from requests import request
 from requests.exceptions import HTTPError, ConnectionError
-
-from urllib.parse import quote as urllib_quote
+try:
+    # For Python 3.0 and later
+    from urllib.parse import quote as urllib_quote
+except ImportError:
+    # Fall back to Python 2
+    from urllib import quote as urllib_quote
 
 import time
 import logging
@@ -183,7 +187,7 @@ class MWS(object):
                 self.logger.warning('%s - connection error' % method_name)
                 pass  # retry immediately
             except MWSError as e:
-                if str(e).find('Service Unavailable') > -1:
+                if str(e) == '503 Server Error: Service Unavailable':
                     tries += 1
                     seconds = tries
                     self.logger.info("Backing off %s: %.1fs" %
@@ -580,6 +584,14 @@ class Products(MWS):
                     ItemCondition=condition,
                     ExcludeMe=excludeme)
         data.update(self.enumerate_param('ASINList.ASIN.', asins))
+        return self.make_request(data)
+
+    def get_lowest_priced_offers_for_asin(self, marketplaceid, asin,
+                                          condition="New"):
+        data = dict(Action='GetLowestPricedOffersForASIN',
+                    MarketplaceId=marketplaceid,
+                    ASIN=asin,
+                    ItemCondition=condition)
         return self.make_request(data)
 
     def get_product_categories_for_sku(self, marketplaceid, sku):
